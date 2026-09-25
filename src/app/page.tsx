@@ -1,83 +1,106 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { fetchWorkouts } from '@/services/api';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
 
-export default async function Home() {
-  const workouts = await fetchWorkouts();
+export default function HomePage() {
+  const [workouts, setWorkouts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [savedCount, setSavedCount] = useState(0);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const data = await fetchWorkouts();
+        setWorkouts(data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+
+    const saved = JSON.parse(localStorage.getItem('savedWorkouts') || '[]');
+    setSavedCount(saved.length);
+  }, []);
+
+  const handleAddToPlan = (workout: any, e: React.MouseEvent) => {
+    e.preventDefault();
+    const existing = JSON.parse(localStorage.getItem('savedWorkouts') || '[]');
+    const exists = existing.some((item: any) => String(item.id) === String(workout.id));
+    
+    if (!exists) {
+      const updated = [...existing, workout];
+      localStorage.setItem('savedWorkouts', JSON.stringify(updated));
+      setSavedCount(updated.length);
+      alert('Workout added to your plan successfully!');
+    } else {
+      alert('This workout is already in your plan!');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#09090b] text-white flex items-center justify-center">
+        <p className="text-zinc-400">Loading workout library...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#09090b] text-white">
-      <Navbar savedCount={0} todayCount={0} />
-
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Hero Section */}
-        <div className="relative bg-[#121214] border border-[#27272a] rounded-2xl p-8 md:p-12 mb-12 overflow-hidden flex flex-col md:flex-row items-center justify-between">
-          <div className="max-w-xl z-10">
-            <span className="text-lime-400 text-xs font-bold tracking-widest uppercase mb-2 block">
-              FITNESS FIRST
-            </span>
-            <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 uppercase">
-              Train with intent. Log every set.
-            </h1>
-            <p className="text-zinc-400 text-sm md:text-base mb-6">
-              Track your daily workouts, build custom routines, and push your limits with our comprehensive fitness management system.
-            </p>
-            <a
-              href="#library"
-              className="inline-block bg-lime-400 text-black font-semibold px-6 py-3 rounded-lg hover:bg-lime-500 transition-colors text-sm"
-            >
-              Browse Workouts
-            </a>
-          </div>
-          <div className="mt-8 md:mt-0 z-10">
-            <div className="w-48 h-48 md:w-60 md:h-60 bg-gradient-to-br from-lime-400/20 to-transparent rounded-full flex items-center justify-center border border-lime-400/30">
-              <span className="text-6xl">🏋️‍♂️</span>
-            </div>
-          </div>
+      <Navbar savedCount={savedCount} todayCount={0} />
+      <main className="max-w-6xl mx-auto px-4 py-10">
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-2">Workout Library</h1>
+          <p className="text-zinc-400">Explore professional fitness routines and build your personal plan.</p>
         </div>
 
-        {/* Library Section */}
-        <div id="library" className="mb-8">
-          <h2 className="text-xl font-bold tracking-wider uppercase mb-6 text-zinc-200">
-            The Library
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {workouts.map((workout, index) => {
-              const workoutId = workout._id || workout.id || String(index);
-              return (
-                <div
-                  key={workoutId}
-                  className="bg-[#121214] border border-[#27272a] rounded-xl overflow-hidden hover:border-lime-400/50 transition-all group flex flex-col"
-                >
-                  <div className="h-48 bg-[#18181b] flex items-center justify-center relative overflow-hidden">
-                    <span className="text-4xl group-hover:scale-110 transition-transform duration-300">💪</span>
-                    <span className="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-lime-400 text-xs font-bold px-2.5 py-1 rounded">
-                      {workout.category}
+        {workouts.length === 0 ? (
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-12 text-center">
+            <p className="text-zinc-400">No workouts available at the moment.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {workouts.map((workout) => (
+              <div
+                key={workout.id}
+                className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col justify-between hover:border-[#ccff00]/50 transition"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="bg-[#ccff00]/10 text-[#ccff00] text-xs font-bold px-3 py-1 rounded-full uppercase">
+                      {workout.category || 'General'}
                     </span>
-                  </div>
-                  <div className="p-5 flex flex-col flex-grow justify-between">
-                    <div>
-                      <h3 className="font-bold text-base mb-2 tracking-wide text-zinc-100 group-hover:text-lime-400 transition-colors">
-                        {workout.title}
-                      </h3>
-                      <div className="flex items-center gap-4 text-xs text-zinc-400 mb-4">
-                        <span>⏱️ {workout.duration} mins</span>
-                        <span>🔥 {workout.calories} kcal</span>
-                      </div>
-                    </div>
-                    <Link
-                      href={`/workouts/${workoutId}`}
-                      className="w-full text-center bg-[#18181b] border border-[#27272a] text-zinc-200 font-semibold py-2 rounded-lg text-xs hover:bg-lime-400 hover:text-black hover:border-lime-400 transition-colors"
+                    <button
+                      onClick={(e) => handleAddToPlan(workout, e)}
+                      className="bg-[#ccff00] text-black text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-[#b3ff00] transition cursor-pointer"
                     >
-                      View Details
-                    </Link>
+                      + Add to Plan
+                    </button>
                   </div>
+                  <h3 className="text-xl font-bold mb-2">{workout.title || workout.name}</h3>
+                  <p className="text-zinc-400 text-sm line-clamp-2 mb-4">
+                    {workout.description || 'Professional training routine.'}
+                  </p>
                 </div>
-              );
-            })}
+
+                <div className="pt-4 border-t border-zinc-800 flex items-center justify-between text-sm text-zinc-400">
+                  <span>⏱️ {workout.duration || '30'} mins</span>
+                  <Link
+                    href={`/workouts/${workout.id}`}
+                    className="text-[#ccff00] font-medium hover:underline"
+                  >
+                    View Details →
+                  </Link>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+        )}
       </main>
     </div>
   );

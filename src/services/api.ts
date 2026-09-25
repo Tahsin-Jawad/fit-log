@@ -9,7 +9,7 @@ export async function fetchWorkouts(): Promise<Workout[]> {
       throw new Error('Failed to fetch workouts data');
     }
     const data = await response.json();
-    return data;
+    return Array.isArray(data) ? data : data.workouts || [];
   } catch (error) {
     console.error('Error fetching workouts:', error);
     return [];
@@ -18,14 +18,15 @@ export async function fetchWorkouts(): Promise<Workout[]> {
 
 export async function fetchWorkoutById(id: string): Promise<Workout | null> {
   try {
-    const response = await `${API_BASE_URL}/${id}`;
-    // Fetching single workout logic here
-    const res = await fetch(`${API_BASE_URL}/${id}`);
-    if (!res.ok) {
-      throw new Error('Failed to fetch workout details');
+    const response = await fetch(`${API_BASE_URL}/${id}`);
+    if (response.ok) {
+      const data = await response.json();
+      if (data) return data;
     }
-    const data = await res.json();
-    return data;
+
+    const workouts = await fetchWorkouts();
+    const found = workouts.find((w: any) => String(w.id) === String(id));
+    return found || null;
   } catch (error) {
     console.error(`Error fetching workout with id ${id}:`, error);
     return null;
