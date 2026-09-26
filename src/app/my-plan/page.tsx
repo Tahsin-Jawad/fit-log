@@ -2,30 +2,32 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { Workout } from '@/types';
 
 export default function MyPlan() {
-  const [activeTab, setActiveTab] = useState<'plan' | 'saved'>('plan');
   const [planWorkouts, setPlanWorkouts] = useState<Workout[]>([]);
   const [savedWorkouts, setSavedWorkouts] = useState<Workout[]>([]);
-  const [completedIds, setCompletedIds] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<'duration' | 'calories' | 'rating'>('duration');
+  const [activeTab, setActiveTab] = useState<'plan' | 'saved'>('plan');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadStorageData = () => {
+    const loadLocalStorageData = () => {
       const plan = JSON.parse(localStorage.getItem('fitlog_plan') || '[]');
       const saved = JSON.parse(localStorage.getItem('fitlog_saved') || '[]');
-      const completed = JSON.parse(localStorage.getItem('fitlog_completed') || '[]');
       setPlanWorkouts(plan);
       setSavedWorkouts(saved);
-      setCompletedIds(completed);
     };
 
-    loadStorageData();
-    window.addEventListener('storage', loadStorageData);
-    return () => window.removeEventListener('storage', loadStorageData);
+    loadLocalStorageData();
+    window.addEventListener('storage', loadLocalStorageData);
+    
+    const handleCustomStorage = () => loadLocalStorageData();
+    window.addEventListener('fitlog_storage_updated', handleCustomStorage as EventListener);
+
+    return () => {
+      window.removeEventListener('storage', loadLocalStorageData);
+      window.removeEventListener('fitlog_storage_updated', handleCustomStorage as EventListener);
+    };
   }, []);
 
   const showToast = (msg: string) => {
@@ -35,37 +37,53 @@ export default function MyPlan() {
     }, 3000);
   };
 
-  const handleRemoveFromPlan = (id: string) => {
+  const removeFromPlan = (id: string) => {
     const updated = planWorkouts.filter((item) => item.id !== id);
     setPlanWorkouts(updated);
     localStorage.setItem('fitlog_plan', JSON.stringify(updated));
     window.dispatchEvent(new Event('storage'));
-    showToast('Removed from plan');
+    window.dispatchEvent(new Event('fitlog_storage_updated'));
+    showToast('Removed from today\'s plan');
   };
 
-  const handleMarkAsDone = (id: string) => {
-    if (!completedIds.includes(id)) {
-      const updated = [...completedIds, id];
-      setCompletedIds(updated);
-      localStorage.setItem('fitlog_completed', JSON.stringify(updated));
-      showToast('Workout marked as done!');
+  const removeFromSaved = (id: string) => {
+    const updated = savedWorkouts.filter((item) => item.id !== id);
+    setSavedWorkouts(updated);
+    localStorage.setItem('fitlog_saved', JSON.stringify(updated));
+    window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('fitlog_storage_updated'));
+    showToast('Removed from saved');
+  };
+
+  const moveToPlan = (workout: Workout) => {
+    if (planWorkouts.length >= 5) {
+      showToast('Cap of five lifts reached for today!');
+      return;
+    }
+    if (!planWorkouts.some((item) => item.id === workout.id)) {
+      const updatedPlan = [...planWorkouts, workout];
+      setPlanWorkouts(updatedPlan);
+      localStorage.setItem('fitlog_plan', JSON.stringify(updatedPlan));
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('fitlog_storage_updated'));
+      showToast('Moved to today\'s plan');
     } else {
-      showToast('Workout already marked as done');
+      showToast('Already in today\'s plan');
     }
   };
 
-  const currentList = activeTab === 'plan' ? planWorkouts : savedWorkouts;
+  // Robust calculation handling all variations of calories/duration property names
+  const totalCalories = planWorkouts.reduce((acc, curr: any) => {
+    const calValue = curr.calories || curr.calorie || curr.kcal || 0;
+    const parsed = parseInt(String(calValue).replace(/[^0-9]/g, ''), 10);
+    return acc + (isNaN(parsed) ? 0 : parsed);
+  }, 0);
 
-  const sortedList = [...currentList].sort((a, b) => {
-    if (sortBy === 'duration') return a.duration - b.duration;
-    if (sortBy === 'calories') return a.calories - b.calories;
-    if (sortBy === 'rating') return b.rating - a.rating;
-    return 0;
-  });
-
-  const totalExercises = planWorkouts.length;
-  const totalMinutes = planWorkouts.reduce((acc, item) => acc + item.duration, 0);
-  const totalCalories = planWorkouts.reduce((acc, item) => acc + item.calories, 0);
+  const totalDuration = planWorkouts.reduce((acc, curr: any) => {
+    const durValue = curr.duration || curr.time || 0;
+    const parsed = parseInt(String(durValue).replace(/[^0-9]/g, ''), 10);
+    return acc + (isNaN(parsed) ? 0 : parsed);
+  }, 0);
 
   return (
     <div className="min-h-screen bg-black text-white relative">
@@ -76,134 +94,166 @@ export default function MyPlan() {
       )}
 
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-extrabold uppercase tracking-tight">MY PLAN</h1>
-          <p className="text-zinc-400 text-xs md:text-sm mt-1">
-            Cap of five lifts for today. Finish them, then load more.
-          </p>
-        </div>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-extrabold uppercase tracking-tight">
+              My Workout Hub
+            </h1>
+            <p className="text-zinc-400 text-sm mt-1">
+              Manage your daily training schedule and saved routines.
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <span className="text-xs text-zinc-400 font-semibold uppercase">Exercises</span>
-            <div className="text-3xl font-extrabold text-[#ccff00] mt-2">{totalExercises}</div>
-          </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <span className="text-xs text-zinc-400 font-semibold uppercase">Minutes</span>
-            <div className="text-3xl font-extrabold text-white mt-2">{totalMinutes}</div>
-          </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-            <span className="text-xs text-zinc-400 font-semibold uppercase">Calories</span>
-            <div className="text-3xl font-extrabold text-white mt-2">{totalCalories}</div>
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 border-b border-zinc-800 pb-4">
-          <div className="flex gap-2 bg-zinc-900 p-1 rounded-xl border border-zinc-800">
+          <div className="flex bg-zinc-900 border border-zinc-800 p-1 rounded-xl">
             <button
               onClick={() => setActiveTab('plan')}
               className={`px-5 py-2 rounded-lg text-xs font-bold transition-colors ${
-                activeTab === 'plan' ? 'bg-[#ccff00] text-black' : 'text-zinc-400 hover:text-white'
+                activeTab === 'plan'
+                  ? 'bg-[#ccff00] text-black'
+                  : 'text-zinc-400 hover:text-white'
               }`}
             >
-              Today's Plan
+              Today's Plan ({planWorkouts.length})
             </button>
             <button
               onClick={() => setActiveTab('saved')}
               className={`px-5 py-2 rounded-lg text-xs font-bold transition-colors ${
-                activeTab === 'saved' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'
+                activeTab === 'saved'
+                  ? 'bg-[#ccff00] text-black'
+                  : 'text-zinc-400 hover:text-white'
               }`}
             >
-              Saved
+              Saved For Later ({savedWorkouts.length})
             </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-400 font-semibold">Sort By:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'duration' | 'calories' | 'rating')}
-              className="bg-zinc-900 border border-zinc-800 text-white text-xs rounded-lg px-3 py-2 font-semibold outline-none focus:border-zinc-700"
-            >
-              <option value="duration">Duration</option>
-              <option value="calories">Calories</option>
-              <option value="rating">Rating</option>
-            </select>
           </div>
         </div>
 
-        {sortedList.length === 0 ? (
-          <div className="bg-zinc-900 border border-dashed border-zinc-800 rounded-2xl p-16 text-center">
-            <h3 className="text-xl font-bold uppercase mb-2">NOTHING HERE YET</h3>
-            <p className="text-zinc-400 text-xs mb-6">
-              Browse the library and add a lift to get today moving.
-            </p>
-            <Link
-              href="/"
-              className="inline-block bg-[#ccff00] text-black font-bold px-6 py-3 rounded-xl text-xs hover:bg-[#b3e600] transition-colors"
-            >
-              Go to workouts
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {sortedList.map((workout) => {
-              const isDone = completedIds.includes(workout.id);
-              return (
-                <div
-                  key={workout.id}
-                  className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 hover:border-zinc-700 transition-all"
+        {activeTab === 'plan' && (
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <span className="text-xs text-zinc-400 font-semibold uppercase">Total Estimated Calories</span>
+                <div className="text-3xl font-extrabold text-white mt-2">{totalCalories} kcal</div>
+              </div>
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+                <span className="text-xs text-zinc-400 font-semibold uppercase">Total Estimated Duration</span>
+                <div className="text-3xl font-extrabold text-white mt-2">{totalDuration} min</div>
+              </div>
+            </div>
+
+            {planWorkouts.length === 0 ? (
+              <div className="text-center py-20 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
+                <p className="text-zinc-400 text-sm mb-4">No workouts added to today's plan yet.</p>
+                <Link
+                  href="/"
+                  className="inline-block bg-[#ccff00] text-black font-bold px-6 py-2.5 rounded-xl text-xs hover:bg-[#b3e600] transition-colors"
                 >
-                  <div className="flex items-center gap-4 w-full md:w-auto">
-                    <div className="relative h-16 w-24 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
-                      <Image
-                        src={workout.image}
-                        alt={workout.title}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold uppercase">{workout.title}</h4>
-                      <p className="text-zinc-400 text-xs">{workout.equipment}</p>
-                      <div className="flex items-center gap-3 text-xs text-zinc-400 mt-1">
-                        <span>⏱️ {workout.duration} min</span>
-                        <span>🔥 {workout.calories} kcal</span>
-                        <span>⭐ {workout.rating}</span>
+                  Browse Workouts
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {planWorkouts.map((workout: any) => (
+                  <div
+                    key={workout.id}
+                    className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-col md:flex-row items-center justify-between gap-6"
+                  >
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                      <div className="relative h-16 w-24 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
+                        <img
+                          src={workout.image}
+                          alt={workout.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold uppercase">{workout.title}</h3>
+                        <p className="text-zinc-400 text-xs mt-0.5">
+                          {workout.sets} Sets • {workout.reps} Reps • {workout.duration} min • {workout.calories || workout.calorie || 0} kcal
+                        </p>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-                    <Link
-                      href={`/workouts/${workout.id}`}
-                      className="bg-zinc-800 hover:bg-zinc-700 text-white font-semibold px-4 py-2 rounded-lg text-xs transition-colors"
-                    >
-                      View Details
-                    </Link>
-                    {activeTab === 'plan' && (
-                      <button
-                        onClick={() => handleMarkAsDone(workout.id)}
-                        className={`font-bold px-4 py-2 rounded-lg text-xs flex items-center gap-1.5 transition-colors ${
-                          isDone
-                            ? 'bg-zinc-800 text-zinc-400 cursor-default'
-                            : 'bg-[#ccff00] hover:bg-[#b3e600] text-black'
-                        }`}
+                    <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                      <Link
+                        href={`/workouts/${workout.id}`}
+                        className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-lg text-xs transition-colors"
                       >
-                        <span>{isDone ? '✓' : '✓'}</span>
-                        <span>{isDone ? 'Completed' : 'Mark as Done'}</span>
+                        View
+                      </Link>
+                      <button
+                        onClick={() => removeFromPlan(workout.id)}
+                        className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold rounded-lg text-xs transition-colors border border-red-500/20"
+                      >
+                        Remove
                       </button>
-                    )}
-                    <button
-                      onClick={() => handleRemoveFromPlan(workout.id)}
-                      className="bg-zinc-800 hover:bg-red-950 text-zinc-400 hover:text-red-400 font-bold px-3 py-2 rounded-lg text-xs transition-colors"
-                    >
-                      ✕
-                    </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'saved' && (
+          <div>
+            {savedWorkouts.length === 0 ? (
+              <div className="text-center py-20 bg-zinc-900/50 border border-zinc-800 rounded-2xl">
+                <p className="text-zinc-400 text-sm mb-4">No saved workouts found.</p>
+                <Link
+                  href="/"
+                  className="inline-block bg-[#ccff00] text-black font-bold px-6 py-2.5 rounded-xl text-xs hover:bg-[#b3e600] transition-colors"
+                >
+                  Browse Workouts
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {savedWorkouts.map((workout: any) => (
+                  <div
+                    key={workout.id}
+                    className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-col md:flex-row items-center justify-between gap-6"
+                  >
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                      <div className="relative h-16 w-24 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
+                        <img
+                          src={workout.image}
+                          alt={workout.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-bold uppercase">{workout.title}</h3>
+                        <p className="text-zinc-400 text-xs mt-0.5">
+                          {workout.equipment} • {workout.difficulty}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                      <button
+                        onClick={() => moveToPlan(workout)}
+                        className="px-4 py-2 bg-[#ccff00] hover:bg-[#b3e600] text-black font-bold rounded-lg text-xs transition-colors"
+                      >
+                        Add to Plan
+                      </button>
+                      <Link
+                        href={`/workouts/${workout.id}`}
+                        className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-lg text-xs transition-colors"
+                      >
+                        View
+                      </Link>
+                      <button
+                        onClick={() => removeFromSaved(workout.id)}
+                        className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold rounded-lg text-xs transition-colors border border-red-500/20"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

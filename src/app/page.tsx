@@ -8,6 +8,7 @@ import { Workout } from '@/types';
 export default function Home() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [sortBy, setSortBy] = useState<string>('duration');
 
   useEffect(() => {
     async function loadData() {
@@ -26,8 +27,40 @@ export default function Home() {
     }
   };
 
+  // Helper functions for values
+  const getDuration = (w: any) => {
+    const dur = w.duration || w.time || 15;
+    return typeof dur === 'number' ? dur : parseInt(String(dur).replace(/[^0-9]/g, ''), 10) || 15;
+  };
+
+  const getCalories = (w: any) => {
+    const cal = w.calories || w.calorie || w.kcal;
+    if (cal) {
+      const parsed = parseInt(String(cal).replace(/[^0-9]/g, ''), 10);
+      if (!isNaN(parsed)) return parsed;
+    }
+    return getDuration(w) * 8;
+  };
+
+  const getRating = (w: any) => {
+    return Number(w.rating) || 4.5;
+  };
+
+  // Sorted workouts list based on active filter
+  const sortedWorkouts = [...workouts].sort((a: any, b: any) => {
+    if (sortBy === 'duration') {
+      return getDuration(a) - getDuration(b);
+    } else if (sortBy === 'calories') {
+      return getCalories(b) - getCalories(a); // High to low calories
+    } else if (sortBy === 'rating') {
+      return getRating(b) - getRating(a); // High to low rating
+    }
+    return 0;
+  });
+
   return (
     <div className="min-h-screen bg-black text-white">
+     {/* Hero Section with Banner */}
       <section className="max-w-7xl mx-auto px-6 py-12">
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="max-w-xl">
@@ -49,21 +82,42 @@ export default function Home() {
             </button>
           </div>
           <div className="w-full md:w-1/2 flex justify-center">
-            <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden border border-zinc-800">
+            <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden bg-transparent flex items-center justify-center">
               <img
                 src="/banner.png"
                 alt="Workout Banner"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain"
               />
             </div>
           </div>
         </div>
       </section>
-
+      {/* Library Section */}
       <section id="library" className="max-w-7xl mx-auto px-6 py-12">
-        <div className="mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-wide">THE LIBRARY</h2>
-          <p className="text-zinc-400 text-sm mt-1">Twelve lifts covering every major muscle group.</p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-wide">THE LIBRARY</h2>
+            <p className="text-zinc-400 text-sm mt-1">Twelve lifts covering every major muscle group.</p>
+          </div>
+
+          {/* Sort By Dropdown with Chevron Icon */}
+          <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl">
+            <span className="text-xs text-zinc-400 font-semibold uppercase">Sort By:</span>
+            <div className="relative flex items-center">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-transparent text-white text-xs font-bold uppercase focus:outline-none cursor-pointer appearance-none pr-6"
+              >
+                <option value="duration" className="bg-zinc-900 text-white">Duration</option>
+                <option value="calories" className="bg-zinc-900 text-white">Calories</option>
+                <option value="rating" className="bg-zinc-900 text-white">Rating</option>
+              </select>
+              <span className="pointer-events-none absolute right-0 text-zinc-400 text-xs">
+                ▼
+              </span>
+            </div>
+          </div>
         </div>
 
         {loading ? (
@@ -73,57 +127,63 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {workouts.map((workout) => (
-              <div
-                key={workout.id}
-                className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex flex-col justify-between hover:border-zinc-700 transition-all"
-              >
-                <div>
-                  <div className="relative h-48 w-full bg-zinc-800">
-                    <img
-                      src={workout.image}
-                      alt={workout.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="p-5">
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {Array.isArray(workout.category) ? (
-                        workout.category.map((cat, index) => (
-                          <span
-                            key={index}
-                            className="bg-[#ccff00] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase"
-                          >
-                            {cat}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="bg-[#ccff00] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                          {workout.category}
-                        </span>
-                      )}
+            {sortedWorkouts.map((workout: any) => {
+              const cardDuration = getDuration(workout);
+              const cardCalories = getCalories(workout);
+              const cardRating = getRating(workout);
+
+              return (
+                <div
+                  key={workout.id}
+                  className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex flex-col justify-between hover:border-zinc-700 transition-all"
+                >
+                  <div>
+                    <div className="relative h-48 w-full bg-zinc-800">
+                      <img
+                        src={workout.image}
+                        alt={workout.title}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    <h3 className="text-lg font-bold uppercase mb-1">{workout.title}</h3>
-                    <p className="text-zinc-400 text-xs line-clamp-2 mb-4">
-                      {workout.description}
-                    </p>
+                    <div className="p-5">
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {Array.isArray(workout.category) ? (
+                          workout.category.map((cat: string, index: number) => (
+                            <span
+                              key={index}
+                              className="bg-[#ccff00] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase"
+                            >
+                              {cat}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="bg-[#ccff00] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                            {workout.category}
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="text-lg font-bold uppercase mb-1">{workout.title}</h3>
+                      <p className="text-zinc-400 text-xs line-clamp-2 mb-4">
+                        {workout.description}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="p-5 pt-0">
+                    <div className="flex items-center justify-between text-xs text-zinc-400 border-t border-zinc-800 pt-4 mb-4">
+                      <span>⏱️ {cardDuration} min</span>
+                      <span className="text-orange-400 font-semibold">🔥 {cardCalories} kcal</span>
+                      <span className="text-yellow-400 font-semibold">⭐ {cardRating.toFixed(1)}</span>
+                    </div>
+                    <Link
+                      href={`/workouts/${workout.id}`}
+                      className="block w-full text-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-2.5 rounded-lg text-xs transition-colors"
+                    >
+                      View Details →
+                    </Link>
                   </div>
                 </div>
-                <div className="p-5 pt-0">
-                  <div className="flex items-center justify-between text-xs text-zinc-400 border-t border-zinc-800 pt-4 mb-4">
-                    <span>⏱️ {workout.duration} min</span>
-                    <span>🔥 {workout.calories} kcal</span>
-                    <span>⭐ {workout.rating}</span>
-                  </div>
-                  <Link
-                    href={`/workouts/${workout.id}`}
-                    className="block w-full text-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-2.5 rounded-lg text-xs transition-colors"
-                  >
-                    View Details →
-                  </Link>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>

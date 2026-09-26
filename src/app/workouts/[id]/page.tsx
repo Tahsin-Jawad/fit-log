@@ -10,7 +10,7 @@ export default function WorkoutDetail() {
   const router = useRouter();
   const id = params?.id as string;
 
-  const [workout, setWorkout] = useState<Workout | null>(null);
+  const [workout, setWorkout] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -32,6 +32,22 @@ export default function WorkoutDetail() {
     }, 3000);
   };
 
+  // Safe extraction of calories and duration
+  const getDuration = (item: any) => {
+    const dur = item?.duration || item?.time || 15;
+    return typeof dur === 'number' ? dur : parseInt(String(dur).replace(/[^0-9]/g, ''), 10) || 15;
+  };
+
+  const getCalories = (item: any) => {
+    const cal = item?.calories || item?.calorie || item?.kcal;
+    if (cal) {
+      const parsed = parseInt(String(cal).replace(/[^0-9]/g, ''), 10);
+      if (!isNaN(parsed)) return parsed;
+    }
+    // Fallback estimation if API doesn't provide calories (duration * 8)
+    return getDuration(item) * 8;
+  };
+
   const handleAddToPlan = () => {
     if (!workout) return;
     const existingPlan = JSON.parse(localStorage.getItem('fitlog_plan') || '[]');
@@ -41,10 +57,18 @@ export default function WorkoutDetail() {
       return;
     }
 
-    if (!existingPlan.some((item: Workout) => item.id === workout.id)) {
-      existingPlan.push(workout);
+    // Normalize workout object with guaranteed calories and duration before saving
+    const normalizedWorkout = {
+      ...workout,
+      duration: getDuration(workout),
+      calories: getCalories(workout),
+    };
+
+    if (!existingPlan.some((item: any) => item.id === workout.id)) {
+      existingPlan.push(normalizedWorkout);
       localStorage.setItem('fitlog_plan', JSON.stringify(existingPlan));
       window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('fitlog_storage_updated'));
       showToast('Added to today\'s plan');
     } else {
       showToast('Already in today\'s plan');
@@ -55,10 +79,17 @@ export default function WorkoutDetail() {
     if (!workout) return;
     const existingSaved = JSON.parse(localStorage.getItem('fitlog_saved') || '[]');
     
-    if (!existingSaved.some((item: Workout) => item.id === workout.id)) {
-      existingSaved.push(workout);
+    const normalizedWorkout = {
+      ...workout,
+      duration: getDuration(workout),
+      calories: getCalories(workout),
+    };
+
+    if (!existingSaved.some((item: any) => item.id === workout.id)) {
+      existingSaved.push(normalizedWorkout);
       localStorage.setItem('fitlog_saved', JSON.stringify(existingSaved));
       window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('fitlog_storage_updated'));
       showToast('Saved for later');
     } else {
       showToast('Already saved');
@@ -88,6 +119,9 @@ export default function WorkoutDetail() {
     );
   }
 
+  const finalDuration = getDuration(workout);
+  const finalCalories = getCalories(workout);
+
   return (
     <div className="min-h-screen bg-black text-white relative">
       {toastMessage && (
@@ -116,7 +150,7 @@ export default function WorkoutDetail() {
 
             <div className="flex flex-wrap gap-2 mb-8">
               {Array.isArray(workout.category) ? (
-                workout.category.map((cat, idx) => (
+                workout.category.map((cat: string, idx: number) => (
                   <span
                     key={idx}
                     className="bg-[#ccff00] text-black text-xs font-bold px-3 py-1 rounded uppercase"
@@ -137,8 +171,8 @@ export default function WorkoutDetail() {
                 { label: 'DIFFICULTY', value: workout.difficulty },
                 { label: 'SETS', value: workout.sets },
                 { label: 'REPS', value: workout.reps },
-                { label: 'DURATION', value: `${workout.duration} min` },
-                { label: 'CALORIES', value: `${workout.calories} kcal` },
+                { label: 'DURATION', value: `${finalDuration} min` },
+                { label: 'CALORIES', value: `${finalCalories} kcal` },
                 { label: 'RATING', value: workout.rating },
               ].map((spec, index) => (
                 <div
@@ -154,7 +188,7 @@ export default function WorkoutDetail() {
             <div className="mb-8">
               <h3 className="text-lg font-bold uppercase mb-4">INSTRUCTIONS</h3>
               <ol className="space-y-3">
-                {workout.instructions?.map((step, index) => (
+                {workout.instructions?.map((step: string, index: number) => (
                   <li key={index} className="flex gap-4 text-xs md:text-sm text-zinc-300">
                     <span className="font-bold text-[#ccff00]">{index + 1}.</span>
                     <span>{step}</span>
