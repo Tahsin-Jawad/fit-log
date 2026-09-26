@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { fetchWorkouts } from '@/services/api';
 import { Workout } from '@/types';
 
@@ -29,7 +28,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 py-12">
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="max-w-xl">
@@ -52,19 +50,16 @@ export default function Home() {
           </div>
           <div className="w-full md:w-1/2 flex justify-center">
             <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden border border-zinc-800">
-              <Image
+              <img
                 src="/banner.png"
                 alt="Workout Banner"
-                fill
-                className="object-cover"
-                priority
+                className="w-full h-full object-cover"
               />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Library Section */}
       <section id="library" className="max-w-7xl mx-auto px-6 py-12">
         <div className="mb-8">
           <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-wide">THE LIBRARY</h2>
@@ -85,23 +80,28 @@ export default function Home() {
               >
                 <div>
                   <div className="relative h-48 w-full bg-zinc-800">
-                    <Image
+                    <img
                       src={workout.image}
                       alt={workout.title}
-                      fill
-                      className="object-cover"
+                      className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="p-5">
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {workout.category.map((cat, index) => (
-                        <span
-                          key={index}
-                          className="bg-[#ccff00] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase"
-                        >
-                          {cat}
+                      {Array.isArray(workout.category) ? (
+                        workout.category.map((cat, index) => (
+                          <span
+                            key={index}
+                            className="bg-[#ccff00] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase"
+                          >
+                            {cat}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="bg-[#ccff00] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                          {workout.category}
                         </span>
-                      ))}
+                      )}
                     </div>
                     <h3 className="text-lg font-bold uppercase mb-1">{workout.title}</h3>
                     <p className="text-zinc-400 text-xs line-clamp-2 mb-4">

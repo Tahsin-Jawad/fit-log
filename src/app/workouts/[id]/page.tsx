@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { fetchWorkoutById } from '@/services/api';
 import { Workout } from '@/types';
 
@@ -100,12 +99,10 @@ export default function WorkoutDetail() {
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           <div className="relative h-[400px] lg:h-[600px] w-full rounded-2xl overflow-hidden border border-zinc-800 bg-zinc-900">
-            <Image
+            <img
               src={workout.image}
               alt={workout.title}
-              fill
-              className="object-cover"
-              priority
+              className="w-full h-full object-cover"
             />
           </div>
 
@@ -118,14 +115,20 @@ export default function WorkoutDetail() {
             </p>
 
             <div className="flex flex-wrap gap-2 mb-8">
-              {workout.category.map((cat, idx) => (
-                <span
-                  key={idx}
-                  className="bg-[#ccff00] text-black text-xs font-bold px-3 py-1 rounded uppercase"
-                >
-                  {cat}
+              {Array.isArray(workout.category) ? (
+                workout.category.map((cat, idx) => (
+                  <span
+                    key={idx}
+                    className="bg-[#ccff00] text-black text-xs font-bold px-3 py-1 rounded uppercase"
+                  >
+                    {cat}
+                  </span>
+                ))
+              ) : (
+                <span className="bg-[#ccff00] text-black text-xs font-bold px-3 py-1 rounded uppercase">
+                  {workout.category}
                 </span>
-              ))}
+              )}
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden mb-8">
@@ -151,7 +154,7 @@ export default function WorkoutDetail() {
             <div className="mb-8">
               <h3 className="text-lg font-bold uppercase mb-4">INSTRUCTIONS</h3>
               <ol className="space-y-3">
-                {workout.instructions.map((step, index) => (
+                {workout.instructions?.map((step, index) => (
                   <li key={index} className="flex gap-4 text-xs md:text-sm text-zinc-300">
                     <span className="font-bold text-[#ccff00]">{index + 1}.</span>
                     <span>{step}</span>
