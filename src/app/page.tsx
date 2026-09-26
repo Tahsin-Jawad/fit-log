@@ -1,156 +1,123 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { fetchWorkouts } from '@/services/api';
-import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import Image from 'next/image';
+import { fetchWorkouts } from '@/services/api';
+import { Workout } from '@/types';
 
-export default function HomePage() {
-  const [workouts, setWorkouts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [planCount, setPlanCount] = useState(0);
-  const [savedCount, setSavedCount] = useState(0);
+export default function Home() {
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     async function loadData() {
-      try {
-        const data = await fetchWorkouts();
-        setWorkouts(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+      setLoading(true);
+      const data = await fetchWorkouts();
+      setWorkouts(data);
+      setLoading(false);
     }
     loadData();
-
-    // লোকালস্টোরেজ থেকে প্ল্যান এবং সেভড কাউন্ট লোড করা
-    const plan = JSON.parse(localStorage.getItem('fitlog_plan') || '[]');
-    const saved = JSON.parse(localStorage.getItem('fitlog_saved') || '[]');
-    setPlanCount(plan.length);
-    setSavedCount(saved.length);
   }, []);
 
-  // "+ Add to Plan" বাটনের সঠিক লজিক
-  const handleAddToPlan = (workout: any, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const existingPlan = JSON.parse(localStorage.getItem('fitlog_plan') || '[]');
-    const exists = existingPlan.some((item: any) => String(item.id) === String(workout.id));
-    
-    if (!exists) {
-      const updatedPlan = [...existingPlan, workout];
-      localStorage.setItem('fitlog_plan', JSON.stringify(updatedPlan));
-      setPlanCount(updatedPlan.length);
-      alert('Workout added to your plan successfully!');
-    } else {
-      alert('This workout is already in your plan!');
+  const scrollToLibrary = () => {
+    const section = document.getElementById('library');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#09090b] text-white flex items-center justify-center">
-        <p className="text-zinc-400">Loading workout library...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#09090b] text-white">
-      <Navbar savedCount={savedCount} todayCount={planCount} />
-      
-      <main className="max-w-6xl mx-auto px-4 py-10">
-        {/* Hero Section with Banner */}
-        <div className="relative bg-[#121214] border border-[#27272a] rounded-3xl p-8 md:p-12 mb-12 overflow-hidden flex flex-col md:flex-row items-center justify-between">
-          <div className="max-w-xl z-10 mb-6 md:mb-0">
-            <span className="text-[#a1a1aa] text-[10px] font-bold tracking-widest uppercase mb-3 block">
+    <div className="min-h-screen bg-black text-white">
+      {/* Hero Section */}
+      <section className="max-w-7xl mx-auto px-6 py-12">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="max-w-xl">
+            <span className="text-xs uppercase tracking-widest text-zinc-400 font-semibold">
               WORKOUT LIBRARY
             </span>
-            <h1 className="text-3xl md:text-5xl font-black tracking-tight mb-4 uppercase leading-tight text-white">
-              TRAIN WITH INTENT. LOG <br />
-              <span className="text-white">EVERY SET.</span>
+            <h1 className="text-4xl md:text-6xl font-extrabold uppercase tracking-tight mt-2 mb-4 leading-none">
+              TRAIN WITH INTENT. LOG EVERY SET.
             </h1>
-            <p className="text-[#a1a1aa] text-xs md:text-sm mb-6 leading-relaxed">
-              FitLog is a dark, no-nonsense gym companion: pick a lift, lock it into today&apos;s plan, and watch the week&apos;s work add up.
+            <p className="text-zinc-400 text-sm md:text-base mb-8">
+              FitLog is a dark, no-nonsense gym companion: pick a lift, lock it into today's plan, and watch the week's work add up.
             </p>
-            <a 
-              href="#workouts-section" 
-              className="inline-block bg-[#ccff00] text-black text-xs font-bold px-5 py-3 rounded-lg hover:bg-[#b3ff00] transition"
+            <button
+              onClick={scrollToLibrary}
+              className="bg-[#ccff00] text-black font-bold px-6 py-3 rounded-xl text-sm flex items-center gap-2 hover:bg-[#b3e600] transition-colors"
             >
-              BROWSE WORKOUTS
-            </a>
+              <span>BROWSE WORKOUTS</span>
+              <span>↓</span>
+            </button>
           </div>
-          <div className="relative w-full md:w-1/2 h-64 md:h-72 rounded-2xl overflow-hidden bg-zinc-800">
-            <img 
-              src="/banner.png" 
-              alt="Fit Log Banner" 
-              className="w-full h-full object-cover rounded-2xl"
-            />
+          <div className="w-full md:w-1/2 flex justify-center">
+            <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden border border-zinc-800">
+              <Image
+                src="/banner.png"
+                alt="Workout Banner"
+                fill
+                className="object-cover"
+                priority
+              />
+            </div>
           </div>
         </div>
+      </section>
 
-        <div id="workouts-section" className="mb-8">
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-1 uppercase">THE LIBRARY</h2>
-          <p className="text-zinc-400 text-xs md:text-sm">Twelve lifts covering every major muscle group.</p>
+      {/* Library Section */}
+      <section id="library" className="max-w-7xl mx-auto px-6 py-12">
+        <div className="mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-wide">THE LIBRARY</h2>
+          <p className="text-zinc-400 text-sm mt-1">Twelve lifts covering every major muscle group.</p>
         </div>
 
-        {workouts.length === 0 ? (
-          <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-12 text-center">
-            <p className="text-zinc-400">No workouts available at the moment.</p>
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[#ccff00]"></div>
+            <span className="ml-3 text-zinc-400 text-sm">Loading workouts...</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {workouts.map((workout, index) => (
+            {workouts.map((workout) => (
               <div
-                key={workout.id || index}
-                className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col justify-between hover:border-lime-400/50 transition"
+                key={workout.id}
+                className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex flex-col justify-between hover:border-zinc-700 transition-all"
               >
                 <div>
-                  {/* Workout Image */}
-                  <div className="relative w-full h-48 bg-zinc-800">
-                    <img 
-                      src={workout.image || "/banner.png"} 
-                      alt={workout.title || workout.name || "Workout"} 
-                      className="w-full h-full object-cover"
+                  <div className="relative h-48 w-full bg-zinc-800">
+                    <Image
+                      src={workout.image}
+                      alt={workout.title}
+                      fill
+                      className="object-cover"
                     />
                   </div>
-
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="bg-lime-400/10 text-lime-400 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase">
-                          {workout.category || 'CHEST'}
+                  <div className="p-5">
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {workout.category.map((cat, index) => (
+                        <span
+                          key={index}
+                          className="bg-[#ccff00] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase"
+                        >
+                          {cat}
                         </span>
-                        <span className="bg-lime-400/10 text-lime-400 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase">
-                          ARMS
-                        </span>
-                      </div>
-                      <button
-                        onClick={(e) => handleAddToPlan(workout, e)}
-                        className="bg-lime-400 text-black text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-lime-300 transition cursor-pointer z-10 relative"
-                      >
-                        + Add to Plan
-                      </button>
+                      ))}
                     </div>
-                    
-                    <h3 className="text-lg font-bold mb-1 uppercase tracking-tight">{workout.title || workout.name}</h3>
-                    <p className="text-zinc-400 text-xs line-clamp-1 mb-4">
-                      {workout.description || 'Professional training routine.'}
+                    <h3 className="text-lg font-bold uppercase mb-1">{workout.title}</h3>
+                    <p className="text-zinc-400 text-xs line-clamp-2 mb-4">
+                      {workout.description}
                     </p>
                   </div>
                 </div>
-
-                <div className="px-6 pb-6 pt-0 flex items-center justify-between text-xs text-zinc-400">
-                  <div className="flex items-center gap-3">
-                    <span>⏱️ {workout.duration || '25'} min</span>
-                    <span>🔥 {workout.calories || '190'} kcal</span>
-                    <span>⭐ {workout.rating || '4.9'}</span>
+                <div className="p-5 pt-0">
+                  <div className="flex items-center justify-between text-xs text-zinc-400 border-t border-zinc-800 pt-4 mb-4">
+                    <span>⏱️ {workout.duration} min</span>
+                    <span>🔥 {workout.calories} kcal</span>
+                    <span>⭐ {workout.rating}</span>
                   </div>
                   <Link
                     href={`/workouts/${workout.id}`}
-                    className="text-lime-400 font-medium hover:underline cursor-pointer z-10"
+                    className="block w-full text-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-2.5 rounded-lg text-xs transition-colors"
                   >
                     View Details →
                   </Link>
@@ -159,7 +126,7 @@ export default function HomePage() {
             ))}
           </div>
         )}
-      </main>
+      </section>
     </div>
   );
 }
