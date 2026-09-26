@@ -27,14 +27,13 @@ export default function Home() {
     }
   };
 
-  // Helper functions for values
   const getDuration = (w: any) => {
     const dur = w.duration || w.time || 15;
     return typeof dur === 'number' ? dur : parseInt(String(dur).replace(/[^0-9]/g, ''), 10) || 15;
   };
 
   const getCalories = (w: any) => {
-    const cal = w.calories || w.calorie || w.kcal;
+    const cal = w.caloriesBurned || w.calories || w.calorie || w.kcal;
     if (cal) {
       const parsed = parseInt(String(cal).replace(/[^0-9]/g, ''), 10);
       if (!isNaN(parsed)) return parsed;
@@ -46,23 +45,22 @@ export default function Home() {
     return Number(w.rating) || 4.5;
   };
 
-  // Sorted workouts list based on active filter
   const sortedWorkouts = [...workouts].sort((a: any, b: any) => {
     if (sortBy === 'duration') {
       return getDuration(a) - getDuration(b);
     } else if (sortBy === 'calories') {
-      return getCalories(b) - getCalories(a); // High to low calories
+      return getCalories(b) - getCalories(a);
     } else if (sortBy === 'rating') {
-      return getRating(b) - getRating(a); // High to low rating
+      return getRating(b) - getRating(a);
     }
     return 0;
   });
 
   return (
     <div className="min-h-screen bg-black text-white">
-     {/* Hero Section with Banner */}
+      {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 py-12">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="bg-zinc-900 border border-zinc-800/80 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="max-w-xl">
             <span className="text-xs uppercase tracking-widest text-zinc-400 font-semibold">
               WORKOUT LIBRARY
@@ -92,15 +90,16 @@ export default function Home() {
           </div>
         </div>
       </section>
+
       {/* Library Section */}
       <section id="library" className="max-w-7xl mx-auto px-6 py-12">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold uppercase tracking-wide">THE LIBRARY</h2>
+            <h2 className="text-2xl md:text-3xl font-extrabold uppercase tracking-wide">THE LIBRARY</h2>
             <p className="text-zinc-400 text-sm mt-1">Twelve lifts covering every major muscle group.</p>
           </div>
 
-          {/* Sort By Dropdown with Chevron Icon */}
+          {/* Sort By Dropdown */}
           <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl">
             <span className="text-xs text-zinc-400 font-semibold uppercase">Sort By:</span>
             <div className="relative flex items-center">
@@ -131,57 +130,72 @@ export default function Home() {
               const cardDuration = getDuration(workout);
               const cardCalories = getCalories(workout);
               const cardRating = getRating(workout);
+              
+              // ডেটা ফাইল অনুযায়ী muscleGroups ব্যবহার করা হচ্ছে (অথবা ফলব্যাক হিসেবে category)
+              const groups = workout.muscleGroups || workout.category;
 
               return (
-                <div
+                <Link
                   key={workout.id}
-                  className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden flex flex-col justify-between hover:border-zinc-700 transition-all"
+                  href={`/workouts/${workout.id}`}
+                  className="bg-zinc-900/90 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col justify-between hover:border-zinc-700 transition-all cursor-pointer group"
                 >
                   <div>
-                    <div className="relative h-48 w-full bg-zinc-800">
+                    {/* Image */}
+                    <div className="relative h-48 w-full bg-zinc-800 overflow-hidden">
                       <img
                         src={workout.image}
-                        alt={workout.title}
-                        className="w-full h-full object-cover"
+                        alt={workout.name || workout.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                     </div>
-                    <div className="p-5">
+
+                    <div className="p-5 pb-3">
+                      {/* Muscle Groups Badges */}
                       <div className="flex flex-wrap gap-2 mb-3">
-                        {Array.isArray(workout.category) ? (
-                          workout.category.map((cat: string, index: number) => (
+                        {Array.isArray(groups) ? (
+                          groups.map((group: string, index: number) => (
                             <span
                               key={index}
-                              className="bg-[#ccff00] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase"
+                              className="bg-[#ccff00] text-black text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider"
                             >
-                              {cat}
+                              {group}
                             </span>
                           ))
                         ) : (
-                          <span className="bg-[#ccff00] text-black text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                            {workout.category}
+                          <span className="bg-[#ccff00] text-black text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider">
+                            {groups || 'GENERAL'}
                           </span>
                         )}
                       </div>
-                      <h3 className="text-lg font-bold uppercase mb-1">{workout.title}</h3>
-                      <p className="text-zinc-400 text-xs line-clamp-2 mb-4">
-                        {workout.description}
+
+                      {/* Title / Name */}
+                      <h3 className="text-base font-extrabold uppercase text-white tracking-wide mb-1">
+                        {workout.name || workout.title}
+                      </h3>
+
+                      {/* Equipment */}
+                      <p className="text-zinc-400 text-xs">
+                        {workout.equipment || 'Standard Equipment'}
                       </p>
                     </div>
                   </div>
-                  <div className="p-5 pt-0">
-                    <div className="flex items-center justify-between text-xs text-zinc-400 border-t border-zinc-800 pt-4 mb-4">
-                      <span>⏱️ {cardDuration} min</span>
-                      <span className="text-orange-400 font-semibold">🔥 {cardCalories} kcal</span>
-                      <span className="text-yellow-400 font-semibold">⭐ {cardRating.toFixed(1)}</span>
+
+                  {/* Footer Stats */}
+                  <div className="p-5 pt-3">
+                    <div className="flex items-center justify-between text-xs text-zinc-400 border-t border-zinc-800/80 pt-3">
+                      <span className="flex items-center gap-1">
+                        ⏱️ {cardDuration} min
+                      </span>
+                      <span className="flex items-center gap-1 text-zinc-300">
+                        🔥 {cardCalories} kcal
+                      </span>
+                      <span className="flex items-center gap-1 text-zinc-300">
+                        ⭐ {cardRating.toFixed(1)}
+                      </span>
                     </div>
-                    <Link
-                      href={`/workouts/${workout.id}`}
-                      className="block w-full text-center bg-zinc-800 hover:bg-zinc-700 text-white font-semibold py-2.5 rounded-lg text-xs transition-colors"
-                    >
-                      View Details →
-                    </Link>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
