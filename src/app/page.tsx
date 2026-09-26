@@ -58,7 +58,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-6 py-12">
         <div className="bg-zinc-900 border border-zinc-800/80 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="max-w-xl">
@@ -91,7 +90,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Library Section */}
       <section id="library" className="max-w-7xl mx-auto px-6 py-12">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
@@ -99,7 +97,6 @@ export default function Home() {
             <p className="text-zinc-400 text-sm mt-1">Twelve lifts covering every major muscle group.</p>
           </div>
 
-          {/* Sort By Dropdown */}
           <div className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-xl">
             <span className="text-xs text-zinc-400 font-semibold uppercase">Sort By:</span>
             <div className="relative flex items-center">
@@ -131,7 +128,6 @@ export default function Home() {
               const cardCalories = getCalories(workout);
               const cardRating = getRating(workout);
               
-              // ডেটা ফাইল অনুযায়ী muscleGroups ব্যবহার করা হচ্ছে (অথবা ফলব্যাক হিসেবে category)
               const groups = workout.muscleGroups || workout.category;
 
               return (
@@ -141,7 +137,6 @@ export default function Home() {
                   className="bg-zinc-900/90 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col justify-between hover:border-zinc-700 transition-all cursor-pointer group"
                 >
                   <div>
-                    {/* Image */}
                     <div className="relative h-48 w-full bg-zinc-800 overflow-hidden">
                       <img
                         src={workout.image}
@@ -151,7 +146,6 @@ export default function Home() {
                     </div>
 
                     <div className="p-5 pb-3">
-                      {/* Muscle Groups Badges */}
                       <div className="flex flex-wrap gap-2 mb-3">
                         {Array.isArray(groups) ? (
                           groups.map((group: string, index: number) => (
@@ -169,19 +163,16 @@ export default function Home() {
                         )}
                       </div>
 
-                      {/* Title / Name */}
                       <h3 className="text-base font-extrabold uppercase text-white tracking-wide mb-1">
                         {workout.name || workout.title}
                       </h3>
 
-                      {/* Equipment */}
                       <p className="text-zinc-400 text-xs">
                         {workout.equipment || 'Standard Equipment'}
                       </p>
                     </div>
                   </div>
 
-                  {/* Footer Stats */}
                   <div className="p-5 pt-3">
                     <div className="flex items-center justify-between text-xs text-zinc-400 border-t border-zinc-800/80 pt-3">
                       <span className="flex items-center gap-1">
