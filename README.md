@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏋️‍♂️ FitLog — Workout Library & Planner
 
-## Getting Started
+**FitLog** is a modern, high-performance web application designed for fitness enthusiasts to browse professional workout libraries, build custom workout plans, and track their fitness journey with a sleek, dark-themed UI.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Live Demo
+Check out the live application here: https://fit-log-beige.vercel.app
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ✨ Key Features
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Comprehensive Workout Library**: Browse detailed exercises categorized by muscle groups, complete with instructions and target areas.
+- **Custom Plan Builder**: Add workouts to your personal plan and manage your saved items seamlessly.
+- **Persistent State Management**: Utilizes browser `LocalStorage` to save your custom workout routines across sessions without losing data.
+- **Interactive UI/UX**: Built with custom loading states, sleek toast notifications for user interactions, and a dedicated custom 404 error page.
+- **Responsive Dark Theme**: Designed with a high-contrast dark aesthetic accented with striking neon lime (`#ccff00`) highlights.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🛠️ Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Framework**: [Next.js](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **Icons & UI Elements**: Custom components with Lucide/React icons
+- **Deployment**: [Vercel](https://vercel.com/)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## ⚙️ Getting Started Locally
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+To run this project on your local machine, follow these steps:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Tahsin-Jawad/fit-log.git
