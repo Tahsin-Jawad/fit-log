@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 interface NavbarProps {
@@ -14,9 +15,9 @@ export default function Navbar({ savedCount, todayCount }: NavbarProps) {
   return (
     <header className="w-full bg-[#121214] border-b border-[#27272a] text-white py-4 px-6 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 text-xl font-bold tracking-wider text-lime-400">
-          FIT LOG
-        </Link>
+      <Link href="/" className="flex items-center gap-2">
+  <Image src="/logo.png" alt="Fit Log Logo" width={80} height={24} className="h-6 w-auto object-contain" />
+</Link>
 
         <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
           <Link 
