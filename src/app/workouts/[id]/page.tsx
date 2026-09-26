@@ -32,7 +32,6 @@ export default function WorkoutDetail() {
     }, 3000);
   };
 
-  // Safe extraction of calories and duration
   const getDuration = (item: any) => {
     const dur = item?.duration || item?.time || 15;
     return typeof dur === 'number' ? dur : parseInt(String(dur).replace(/[^0-9]/g, ''), 10) || 15;
@@ -44,7 +43,6 @@ export default function WorkoutDetail() {
       const parsed = parseInt(String(cal).replace(/[^0-9]/g, ''), 10);
       if (!isNaN(parsed)) return parsed;
     }
-    // Fallback estimation if API doesn't provide calories (duration * 8)
     return getDuration(item) * 8;
   };
 
@@ -57,7 +55,6 @@ export default function WorkoutDetail() {
       return;
     }
 
-    // Normalize workout object with guaranteed calories and duration before saving
     const normalizedWorkout = {
       ...workout,
       duration: getDuration(workout),
